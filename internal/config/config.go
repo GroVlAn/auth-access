@@ -16,6 +16,10 @@ type HTTP struct {
 	BaseHTTPPath      string        `yaml:"base_http_path" env-default:"/api"`
 }
 
+type GRPC struct {
+	Port string `yaml:"port"`
+}
+
 type PostgresSettings struct {
 	Host     string `yaml:"host" env-required:"true"`
 	Port     string `yaml:"port"`
@@ -31,6 +35,7 @@ type Settings struct {
 
 type Config struct {
 	HTTP     HTTP             `yaml:"http"`
+	GRPC     GRPC             `yaml:"grpc"`
 	Settings Settings         `yaml:"settings"`
 	DB       PostgresSettings `yaml:"db"`
 }
