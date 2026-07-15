@@ -13,10 +13,12 @@ import (
 	grpcHandler "github.com/GroVlAn/auth-access/internal/handler/grpc-handler"
 	httpHandler "github.com/GroVlAn/auth-access/internal/handler/http-handler"
 	"github.com/GroVlAn/auth-access/internal/infrastructure/database"
+	"github.com/GroVlAn/auth-access/internal/infrastructure/preloader"
 	"github.com/GroVlAn/auth-access/internal/repository"
 	grpcServer "github.com/GroVlAn/auth-access/internal/server/grpc-server"
 	httpServer "github.com/GroVlAn/auth-access/internal/server/http-server"
 	"github.com/GroVlAn/auth-access/internal/service"
+	"github.com/GroVlAn/auth-base/ew/httpx"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog"
 )
@@ -42,6 +44,7 @@ func main() {
 	}
 
 	configPath := flag.String("config", localConfigPath, "Path to the configuration file")
+	defRolesConfigPath := flag.String("config-def-roles", "", "Path to the default roles configuration file")
 	flag.Parse()
 
 	cfg, err := config.New(*configPath)
@@ -62,6 +65,14 @@ func main() {
 	}
 
 	r := repository.New(db)
+
+	if len(*defRolesConfigPath) > 0 {
+		pr := preloader.New(r, preloader.Deps{
+			DefRolesConfigPath: *defRolesConfigPath,
+		})
+
+		loadDefaultRoles(ctx, l, cfg, pr)
+	}
 
 	s := service.New(r)
 
@@ -106,5 +117,17 @@ func main() {
 		l.Fatal().Err(err).Msg("failed to shutdown server")
 	} else {
 		l.Info().Msg("server shutdown gracefully")
+	}
+}
+
+func loadDefaultRoles(ctx context.Context, l zerolog.Logger, cfg *config.Config, preloader *preloader.Preloader) {
+	ctxR, cancelR := context.WithTimeout(ctx, cfg.Settings.DefaultTimeout)
+	defer cancelR()
+
+	err := preloader.Preload(ctxR)
+
+	if err != nil {
+		respErr := httpx.HandleError(err)
+		l.Fatal().Err(err).Msg(respErr.LogMsg)
 	}
 }
