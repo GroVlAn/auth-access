@@ -6,6 +6,19 @@ import (
 	"github.com/GroVlAn/auth-base/ew"
 )
 
+type PermissionElement struct {
+	Name        string `json:"name"`
+	IsDefault   bool   `json:"is_default" db:"is_default"`
+	Description string `json:"description"`
+}
+
+type RoleElement struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	IsDefault   bool                `json:"is_default" db:"is_default"`
+	Permissions []PermissionElement `json:"permissions"`
+}
+
 type Role struct {
 	ID          string    `json:"-" db:"id" valid:"require"`
 	Name        string    `json:"name" db:"name" valid:"require"`
@@ -19,7 +32,6 @@ type Permission struct {
 	ID          string    `json:"-" db:"id" valid:"require"`
 	Name        string    `json:"name" db:"name" valid:"require"`
 	Description string    `json:"description" db:"description"`
-	IsDefault   bool      `json:"is_default" db:"is_default"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdateAt    time.Time `json:"update_at" db:"update_at"`
 }

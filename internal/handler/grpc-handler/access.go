@@ -55,7 +55,6 @@ func (h *GRPCHandler) CreatePermission(ctx context.Context, req *api.PermissionR
 			ID:          req.Permission.ID,
 			Name:        req.Permission.Name,
 			Description: req.Permission.Description,
-			IsDefault:   req.Permission.IsDefault,
 		},
 	}
 
@@ -108,7 +107,6 @@ func (h *GRPCHandler) permissions(
 				ID:          perm.ID,
 				Name:        perm.Name,
 				Description: perm.Description,
-				IsDefault:   perm.IsDefault,
 				CreatedAt:   timestamppb.New(perm.CreatedAt),
 				UpdatedAt:   timestamppb.New(perm.UpdateAt),
 			},

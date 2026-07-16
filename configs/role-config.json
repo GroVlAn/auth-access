@@ -1,0 +1,75 @@
+[
+	{
+		"name": "admin",
+		"is_default": false,
+		"description": "administrator",
+		"permissions": [
+			{
+				"name": "user_watch",
+				"description": "can only watch content"
+			},
+			{
+				"name": "create",
+				"description": "can create new records"
+			},
+			{
+				"name": "update",
+				"description": "can update records"
+			},
+			{
+				"name": "delete",
+				"description": "can delete records"
+			},
+			{
+				"name": "logout",
+				"description": "can logout"
+			},
+			{
+				"name": "admin_create",
+				"description": "can create admin records"
+			},
+			{
+				"name": "admin_update",
+				"description": "can update admin records"
+			},
+			{
+				"name": "delete_create",
+				"description": "can delete admin records"
+			}
+		]
+	},
+	{
+		"name": "user",
+		"is_default": true,
+		"description": "registered user",
+		"permissions": [
+			{
+				"name": "user_watch",
+				"description": "can watch content"
+			},
+			{
+				"name": "create",
+				"description": "can create new records"
+			},
+			{
+				"name": "update",
+				"description": "can update records"
+			},
+			{
+				"name": "logout",
+				"description": "can logout"
+			}
+		]
+	},
+	{
+		"name": "guest",
+		"description": "just a guest",
+		"is_default": false,
+		"permissions": [
+			{
+				"name": "watch",
+				"description": "can watch content"
+			}
+		]
+	}
+]

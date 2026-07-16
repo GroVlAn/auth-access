@@ -129,7 +129,6 @@ func (r *Repository) PermissionsByUser(ctx context.Context, userID string) ([]do
 		p.id, 
 		p.name,
 		p.description,
-		p.is_default,
 		p.created_at,
 		p.updated_at
 		FROM %s ur 
@@ -162,7 +161,6 @@ func (r *Repository) PermissionsByRole(ctx context.Context, roleName string) ([]
 		p.id, 
 		p.name,
 		p.description,
-		p.is_default,
 		p.created_at,
 		p.updated_at
 		FROM %s p 
@@ -228,7 +226,6 @@ func (r *Repository) upsertPermission(
 			id,
 			name,
 			description,
-			is_default,
 			create_at,
 			update_at
 		)
@@ -236,7 +233,6 @@ func (r *Repository) upsertPermission(
 			:id,
 			:name,
 			:description,
-			:is_default,
 			:create_at,
 			:update_at
 		)
@@ -252,7 +248,6 @@ func (r *Repository) upsertPermission(
 		permission.ID,
 		permission.Name,
 		permission.Description,
-		permission.IsDefault,
 		permission.CreatedAt,
 		permission.UpdateAt,
 	)
