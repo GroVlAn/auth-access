@@ -13,6 +13,7 @@ type repo interface {
 	CreateRole(ctx context.Context, role domain.Role) error
 	Role(ctx context.Context, userID string) (domain.Role, error)
 	RoleIDByName(ctx context.Context, name string) (string, error)
+	DefaultRole(ctx context.Context) (domain.Role, error)
 	CreatePermission(
 		ctx context.Context,
 		permission domain.Permission,
@@ -88,4 +89,17 @@ func (s *Service) PermissionsByRole(ctx context.Context, roleName string) ([]dom
 	}
 
 	return permissions, nil
+}
+
+func (s *Service) BindUserRole(ctx context.Context, userID string) error {
+	defRole, err := s.repo.DefaultRole(ctx)
+	if err != nil {
+		return fmt.Errorf("getting default role: %w", err)
+	}
+
+	if err := s.repo.SetUserRole(ctx, defRole.ID, userID); err != nil {
+		return fmt.Errorf("setting default user role: %w", err)
+	}
+
+	return nil
 }

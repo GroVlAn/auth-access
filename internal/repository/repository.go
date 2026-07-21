@@ -85,6 +85,24 @@ func (r *Repository) RoleIDByName(ctx context.Context, name string) (string, err
 	return id, nil
 }
 
+func (r *Repository) DefaultRole(ctx context.Context) (domain.Role, error) {
+	query := fmt.Sprintf(`
+		SELECT id, name, description, default, created_at, updated_at
+		FROM %s
+		WHERE default = 1
+	`,
+		roleTable,
+	)
+
+	var role domain.Role
+
+	if err := r.db.GetContext(ctx, &role, query); err != nil {
+		return role, handleQueryError(err, "role not found")
+	}
+
+	return role, nil
+}
+
 func (r *Repository) CreatePermission(
 	ctx context.Context,
 	permission domain.Permission,

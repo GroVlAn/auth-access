@@ -20,6 +20,12 @@ type GRPC struct {
 	Port string `yaml:"port"`
 }
 
+type Kafka struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
+	GroupID string   `yaml:"group_id"`
+}
+
 type PostgresSettings struct {
 	Host     string `yaml:"host" env-required:"true"`
 	Port     string `yaml:"port"`
@@ -36,6 +42,7 @@ type Settings struct {
 type Config struct {
 	HTTP     HTTP             `yaml:"http"`
 	GRPC     GRPC             `yaml:"grpc"`
+	Kafka    Kafka            `yaml:"kafka"`
 	Settings Settings         `yaml:"settings"`
 	DB       PostgresSettings `yaml:"db"`
 }
