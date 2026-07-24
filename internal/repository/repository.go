@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -38,9 +39,13 @@ func (r *Repository) CreateRole(ctx context.Context, role domain.Role) error {
 		roleTable,
 	)
 
-	_, err := r.db.NamedExecContext(ctx, query, role)
+	res, err := r.db.NamedExecContext(ctx, query, role)
 	if err != nil {
 		return r.handleErrCreate(err, "roles_name_key", "role")
+	}
+
+	if err := checkRowsAffected(res, "role", role.ID); err != nil {
+		return fmt.Errorf("checking affected: %w", err)
 	}
 
 	return nil
@@ -56,7 +61,7 @@ func (r *Repository) Role(ctx context.Context, userID string) (domain.Role, erro
 				r.created_at,
 				r.updated_at
 				FROM %s r
-				JOiN %s u 
+				JOIN %s u 
 					ON r.id = u.role_id
 				WHERE u.user_id=$1`,
 		roleTable,
@@ -87,9 +92,9 @@ func (r *Repository) RoleIDByName(ctx context.Context, name string) (string, err
 
 func (r *Repository) DefaultRole(ctx context.Context) (domain.Role, error) {
 	query := fmt.Sprintf(`
-		SELECT id, name, description, default, created_at, updated_at
+		SELECT id, name, description, is_default, created_at, updated_at
 		FROM %s
-		WHERE default = 1
+		WHERE is_default = 1
 	`,
 		roleTable,
 	)
@@ -105,8 +110,9 @@ func (r *Repository) DefaultRole(ctx context.Context) (domain.Role, error) {
 
 func (r *Repository) CreatePermission(
 	ctx context.Context,
+	roleID string,
 	permission domain.Permission,
-	roleID, rpID string) error {
+) error {
 	return withTx(ctx, r.db, func(tx *sqlx.Tx) error {
 		permissionID, err := r.upsertPermission(ctx, tx, permission)
 		if err != nil {
@@ -123,10 +129,9 @@ func (r *Repository) CreatePermission(
 			DO NOTHING
 		`, rolePermissionTable)
 
-		_, err = tx.ExecContext(
+		res, err := tx.ExecContext(
 			ctx,
 			query,
-			rpID,
 			roleID,
 			permissionID,
 		)
@@ -135,6 +140,10 @@ func (r *Repository) CreatePermission(
 				ew.ErrorTypeInternal,
 				fmt.Errorf("inserting role permission: %w", err),
 			)
+		}
+
+		if err := checkRowsAffected(res, "permission", permissionID); err != nil {
+			return fmt.Errorf("checking affected: %w", err)
 		}
 
 		return nil
@@ -184,10 +193,13 @@ func (r *Repository) PermissionsByRole(ctx context.Context, roleName string) ([]
 		FROM %s p 
 		JOIN %s rp 
 			ON p.id = rp.permission_id
-		WHERE rp.name = $1
+		JOIN %s r
+			ON rp.role_id = r.id
+		WHERE r.name = $1
 		`,
 		permissionTable,
 		rolePermissionTable,
+		roleTable,
 	)
 
 	permissions, err := r.selectPermissions(ctx, query, roleName)
@@ -204,14 +216,87 @@ func (r *Repository) PermissionsByRole(ctx context.Context, roleName string) ([]
 
 func (r *Repository) SetUserRole(ctx context.Context, roleID, userID string) error {
 	query := fmt.Sprintf(`
-		INSERT INTO %s (role_id, user_id) VALUES (:role_id, user_id)
+		INSERT INTO %s (role_id, user_id) VALUES ($1, $2)
 	`, roleUserTable)
 
-	if _, err := r.db.QueryContext(ctx, query, roleID, userID); err != nil {
+	res, err := r.db.ExecContext(ctx, query, roleID, userID)
+
+	if err != nil {
 		return ew.New(
 			ew.ErrorTypeInternal,
 			fmt.Errorf("inserting user role: %w", err),
 		)
+	}
+
+	if err := checkRowsAffected(res, "user roles", userID); err != nil {
+		return fmt.Errorf("checking affected: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) ReplaceUserRole(
+	ctx context.Context,
+	userID,
+	oldRoleID,
+	newRoleID string,
+) error {
+	return withTx(ctx, r.db, func(tx *sqlx.Tx) error {
+		query := fmt.Sprintf(`
+			UPDATE %s
+			SET role_id = $1
+			WHERE user_id = $2
+			  AND role_id = $3
+		`, roleUserTable)
+
+		res, err := tx.ExecContext(
+			ctx,
+			query,
+			newRoleID,
+			userID,
+			oldRoleID,
+		)
+		if err != nil {
+			return ew.New(
+				ew.ErrorTypeInternal,
+				fmt.Errorf("replacing user role: %w", err),
+			)
+		}
+
+		if err := checkRowsAffected(res, "user roles", userID); err != nil {
+			return fmt.Errorf("checking affected: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (r *Repository) DeleteUserRole(
+	ctx context.Context,
+	userID,
+	roleID string,
+) error {
+	query := fmt.Sprintf(`
+		DELETE FROM %s
+		WHERE user_id = $1
+		  AND role_id = $2
+	`, roleUserTable)
+
+	res, err := r.db.ExecContext(
+		ctx,
+		query,
+		userID,
+		roleID,
+	)
+	if err != nil {
+		return ew.New(
+			ew.ErrorTypeInternal,
+			fmt.Errorf("deleting user role: %w", err),
+		)
+	}
+
+	if err := checkRowsAffected(res, "user roles", userID); err != nil {
+		return fmt.Errorf("checking affected: %w", err)
 	}
 
 	return nil
@@ -240,7 +325,7 @@ func (r *Repository) upsertPermission(
 	permission domain.Permission,
 ) (string, error) {
 	query := fmt.Sprintf(`
-		INSERT INFO %s (
+		INSERT INTO %s (
 			id,
 			name,
 			description,
@@ -311,4 +396,15 @@ func (r *Repository) permissionNotFound(entity, id string) error {
 		ew.ErrorTypeNotFound,
 		fmt.Errorf("%s %s not found", entity, id),
 	).Msg("permission not found")
+}
+
+func checkRowsAffected(res sql.Result, entity string, id string) error {
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return ew.New(ew.ErrorTypeInternal, fmt.Errorf("getting affected rows: %w", err))
+	}
+	if rows == 0 {
+		return ew.New(ew.ErrorTypeNotFound, fmt.Errorf("%s with id %s not found", entity, id))
+	}
+	return nil
 }

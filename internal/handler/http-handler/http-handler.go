@@ -16,6 +16,9 @@ type service interface {
 	CreatePermission(ctx context.Context, permission domain.Permission, roleName string) error
 	PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error)
 	PermissionsByRole(ctx context.Context, roleName string) ([]domain.Permission, error)
+	AddUserRole(ctx context.Context, userID, roleName string) error
+	ReplaceUserRole(ctx context.Context, updUsRl domain.UpdateUserRoleReq) error
+	DeleteUserRole(ctx context.Context, userID, roleName string) error
 }
 
 type Deps struct {

@@ -15,8 +15,9 @@ type repo interface {
 	CreateRole(ctx context.Context, role domain.Role) error
 	CreatePermission(
 		ctx context.Context,
+		roleID string,
 		permission domain.Permission,
-		roleID, rpID string) error
+	) error
 }
 
 type Deps struct {
@@ -96,9 +97,7 @@ func (p *Preloader) createPermission(
 			UpdateAt:    time.Now(),
 		}
 
-		rpID := uuid.NewString()
-
-		if err := p.repo.CreatePermission(ctx, permission, roleID, rpID); err != nil {
+		if err := p.repo.CreatePermission(ctx, roleID, permission); err != nil {
 			return fmt.Errorf("creating default permission: %w", err)
 		}
 	}

@@ -12,8 +12,11 @@ import (
 )
 
 const (
-	roleEndpoint       = "/"
-	permissionEndpoint = "/permission"
+	roleEndpoint            = "/"
+	addUserRoleEndpoint     = "/user/role"
+	replaceUserRoleEndpoint = "/user/replace"
+	deleteUserRoleEndpoint  = "/user/delete"
+	permissionEndpoint      = "/permission"
 
 	userIDKey   = "user-id"
 	roleNameKey = "role-name"
@@ -24,6 +27,9 @@ func (h *HTTPHandler) accessRoute(r chi.Router) {
 	r.Get(roleEndpoint, h.role)
 	r.Post(permissionEndpoint, h.createPermission)
 	r.Get(permissionEndpoint, h.permissions)
+	r.Patch(addUserRoleEndpoint, h.addUserRole)
+	r.Patch(replaceUserRoleEndpoint, h.replaceUserRole)
+	r.Patch(deleteUserRoleEndpoint, h.deleteUserRole)
 }
 
 func (h *HTTPHandler) createRole(w http.ResponseWriter, r *http.Request) {
@@ -115,6 +121,91 @@ func (h *HTTPHandler) permissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.permissionsByRoleName(w, ctx, roleName)
+}
+
+func (h *HTTPHandler) addUserRole(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	userID := query.Get(userIDKey)
+	if len(userID) == 0 {
+		h.handleError(
+			w,
+			ew.NewErrValidation("query must have user id"),
+		)
+		return
+	}
+
+	roleName := query.Get(roleNameKey)
+	if len(roleName) == 0 {
+		h.handleError(
+			w,
+			ew.NewErrValidation("query must have role name"),
+		)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), h.DefaultTimeout)
+	defer cancel()
+
+	if err := h.s.AddUserRole(ctx, userID, roleName); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.sendSuccessResponse(w, "user has new role", http.StatusOK)
+}
+
+func (h *HTTPHandler) replaceUserRole(w http.ResponseWriter, r *http.Request) {
+	h.withBodyClose(r.Body, func(body io.ReadCloser) {
+		var updUsRl domain.UpdateUserRoleReq
+
+		if err := json.NewDecoder(body).Decode(&updUsRl); err != nil {
+			h.handleDecodeBody(w, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), h.DefaultTimeout)
+		defer cancel()
+
+		if err := h.s.ReplaceUserRole(ctx, updUsRl); err != nil {
+			h.handleError(w, err)
+			return
+		}
+
+		h.sendSuccessResponse(w, "user role replaced", http.StatusOK)
+	})
+}
+
+func (h *HTTPHandler) deleteUserRole(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	userID := query.Get(userIDKey)
+	if len(userID) == 0 {
+		h.handleError(
+			w,
+			ew.NewErrValidation("query must have user id"),
+		)
+		return
+	}
+
+	roleName := query.Get(roleNameKey)
+	if len(roleName) == 0 {
+		h.handleError(
+			w,
+			ew.NewErrValidation("query must have role name"),
+		)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), h.DefaultTimeout)
+	defer cancel()
+
+	if err := h.s.DeleteUserRole(ctx, userID, roleName); err != nil {
+		h.handleError(w, err)
+		return
+	}
+
+	h.sendSuccessResponse(w, "user role has deleted", http.StatusOK)
 }
 
 func (h *HTTPHandler) permissionsByUserID(w http.ResponseWriter, ctx context.Context, userID string) {

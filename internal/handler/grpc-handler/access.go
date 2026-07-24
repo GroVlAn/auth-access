@@ -9,12 +9,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (h *GRPCHandler) CreateRole(ctx context.Context, reqRole *api.Role) (*api.Success, error) {
+func (h *GRPCHandler) CreateRole(ctx context.Context, req *api.Role) (*api.Success, error) {
 	role := domain.Role{
-		ID:          reqRole.ID,
-		Name:        reqRole.Name,
-		Description: reqRole.Description,
-		IsDefault:   reqRole.IsDefault,
+		ID:          req.ID,
+		Name:        req.Name,
+		Description: req.Description,
+		IsDefault:   req.IsDefault,
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
@@ -24,16 +24,14 @@ func (h *GRPCHandler) CreateRole(ctx context.Context, reqRole *api.Role) (*api.S
 		return nil, grpcx.HandleError(err)
 	}
 
-	return &api.Success{
-		Success: true,
-	}, nil
+	return success(), nil
 }
 
-func (h *GRPCHandler) Role(ctx context.Context, userID *api.UserID) (*api.Role, error) {
+func (h *GRPCHandler) Role(ctx context.Context, req *api.UserID) (*api.Role, error) {
 	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
 	defer cancel()
 
-	role, err := h.s.Role(ctx, userID.User_ID)
+	role, err := h.s.Role(ctx, req.User_ID)
 	if err != nil {
 		return nil, grpcx.HandleError(err)
 	}
@@ -70,17 +68,65 @@ func (h *GRPCHandler) CreatePermission(ctx context.Context, req *api.PermissionR
 		return nil, grpcx.HandleError(err)
 	}
 
-	return &api.Success{
-		Success: true,
-	}, nil
+	return success(), nil
 }
 
-func (h *GRPCHandler) GetPermissionByUserID(ctx context.Context, userID *api.UserID) (*api.Permissions, error) {
-	return h.permissions(ctx, userID.User_ID, h.s.PermissionsByUser)
+func (h *GRPCHandler) GetPermissionByUserID(ctx context.Context, req *api.UserID) (*api.Permissions, error) {
+	return h.permissions(ctx, req.User_ID, h.s.PermissionsByUser)
 }
 
-func (h *GRPCHandler) GetPermissionByRoleName(ctx context.Context, roleName *api.RoleName) (*api.Permissions, error) {
-	return h.permissions(ctx, roleName.RoleName, h.s.PermissionsByRole)
+func (h *GRPCHandler) GetPermissionByRoleName(ctx context.Context, req *api.RoleName) (*api.Permissions, error) {
+	return h.permissions(ctx, req.RoleName, h.s.PermissionsByRole)
+}
+
+func (h *GRPCHandler) BindUserRole(ctx context.Context, req *api.UserID) (*api.Success, error) {
+	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
+	defer cancel()
+
+	if err := h.s.BindUserRole(ctx, req.User_ID); err != nil {
+		return nil, grpcx.HandleError(err)
+	}
+
+	return success(), nil
+}
+
+func (h *GRPCHandler) AddUserRole(ctx context.Context, req *api.UserIDRoleName) (*api.Success, error) {
+	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
+	defer cancel()
+
+	if err := h.s.AddUserRole(ctx, req.User_ID, req.RoleName); err != nil {
+		return nil, grpcx.HandleError(err)
+	}
+
+	return success(), nil
+}
+
+func (h *GRPCHandler) ReplaceUserRole(ctx context.Context, req *api.UpdateUserRoleReq) (*api.Success, error) {
+	updUsRl := domain.UpdateUserRoleReq{
+		UserID:      req.User_ID,
+		OldRoleName: req.OldRoleName,
+		NewRoleName: req.NewRoleName,
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
+	defer cancel()
+
+	if err := h.s.ReplaceUserRole(ctx, updUsRl); err != nil {
+		return nil, grpcx.HandleError(err)
+	}
+
+	return success(), nil
+}
+
+func (h *GRPCHandler) DeleteUserRole(ctx context.Context, req *api.UserIDRoleName) (*api.Success, error) {
+	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
+	defer cancel()
+
+	if err := h.s.DeleteUserRole(ctx, req.User_ID, req.RoleName); err != nil {
+		return nil, grpcx.HandleError(err)
+	}
+
+	return success(), nil
 }
 
 func (h *GRPCHandler) permissions(
@@ -114,4 +160,10 @@ func (h *GRPCHandler) permissions(
 	}
 
 	return res, nil
+}
+
+func success() *api.Success {
+	return &api.Success{
+		Success: true,
+	}
 }

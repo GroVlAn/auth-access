@@ -16,11 +16,23 @@ type repo interface {
 	DefaultRole(ctx context.Context) (domain.Role, error)
 	CreatePermission(
 		ctx context.Context,
+		roleID string,
 		permission domain.Permission,
-		roleID, rpID string) error
+	) error
 	PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error)
 	PermissionsByRole(ctx context.Context, roleName string) ([]domain.Permission, error)
 	SetUserRole(ctx context.Context, roleID, userID string) error
+	ReplaceUserRole(
+		ctx context.Context,
+		userID,
+		oldRoleID,
+		newRoleID string,
+	) error
+	DeleteUserRole(
+		ctx context.Context,
+		userID,
+		roleID string,
+	) error
 }
 
 type Service struct {
@@ -64,9 +76,7 @@ func (s *Service) CreatePermission(ctx context.Context, permission domain.Permis
 		return fmt.Errorf("getting role id by role name: %w", err)
 	}
 
-	rpID := uuid.NewString()
-
-	if err := s.repo.CreatePermission(ctx, permission, roleID, rpID); err != nil {
+	if err := s.repo.CreatePermission(ctx, roleID, permission); err != nil {
 		return fmt.Errorf("creating permission: %w", err)
 	}
 
@@ -91,6 +101,19 @@ func (s *Service) PermissionsByRole(ctx context.Context, roleName string) ([]dom
 	return permissions, nil
 }
 
+func (s *Service) AddUserRole(ctx context.Context, userID, roleName string) error {
+	roleID, err := s.repo.RoleIDByName(ctx, roleName)
+	if err != nil {
+		return fmt.Errorf("getting role id by name: %w", err)
+	}
+
+	if err := s.repo.SetUserRole(ctx, roleID, userID); err != nil {
+		return fmt.Errorf("setting new user role: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) BindUserRole(ctx context.Context, userID string) error {
 	defRole, err := s.repo.DefaultRole(ctx)
 	if err != nil {
@@ -99,6 +122,37 @@ func (s *Service) BindUserRole(ctx context.Context, userID string) error {
 
 	if err := s.repo.SetUserRole(ctx, defRole.ID, userID); err != nil {
 		return fmt.Errorf("setting default user role: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ReplaceUserRole(ctx context.Context, updUsRl domain.UpdateUserRoleReq) error {
+	oldRoleID, err := s.repo.RoleIDByName(ctx, updUsRl.OldRoleName)
+	if err != nil {
+		return fmt.Errorf("getting role id by name: %w", err)
+	}
+
+	newRoleID, err := s.repo.RoleIDByName(ctx, updUsRl.NewRoleName)
+	if err != nil {
+		return fmt.Errorf("getting role id by name: %w", err)
+	}
+
+	if err := s.repo.ReplaceUserRole(ctx, updUsRl.UserID, oldRoleID, newRoleID); err != nil {
+		return fmt.Errorf("replacing user role: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) DeleteUserRole(ctx context.Context, userID, roleName string) error {
+	roleID, err := s.repo.RoleIDByName(ctx, roleName)
+	if err != nil {
+		return fmt.Errorf("getting role id by name: %w", err)
+	}
+
+	if err := s.repo.DeleteUserRole(ctx, userID, roleID); err != nil {
+		return fmt.Errorf("deleting user role: %w", err)
 	}
 
 	return nil
