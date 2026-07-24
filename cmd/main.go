@@ -12,7 +12,6 @@ import (
 	"github.com/GroVlAn/auth-access/internal/config"
 	grpcHandler "github.com/GroVlAn/auth-access/internal/handler/grpc-handler"
 	httpHandler "github.com/GroVlAn/auth-access/internal/handler/http-handler"
-	"github.com/GroVlAn/auth-access/internal/infrastructure/consumer"
 	"github.com/GroVlAn/auth-access/internal/infrastructure/database"
 	"github.com/GroVlAn/auth-access/internal/infrastructure/preloader"
 	"github.com/GroVlAn/auth-access/internal/repository"
@@ -82,12 +81,6 @@ func main() {
 
 	s := service.New(r)
 
-	cons := consumer.New(consumer.Conf{
-		Brokers: cfg.Kafka.Brokers,
-		Topic:   cfg.Kafka.Topic,
-		GroupID: cfg.Kafka.GroupID,
-	}, s)
-
 	h := httpHandler.New(l, s, httpHandler.Deps{
 		BasePath:       cfg.HTTP.BaseHTTPPath,
 		DefaultTimeout: cfg.Settings.DefaultTimeout,
@@ -126,12 +119,6 @@ func main() {
 			errCh <- err
 		}
 
-	}()
-
-	go func() {
-		if err := cons.SubscribeUserID(ctx); err != nil {
-			l.Error().Err(err).Msg("failed to consume listening user id")
-		}
 	}()
 
 	l.Info().
