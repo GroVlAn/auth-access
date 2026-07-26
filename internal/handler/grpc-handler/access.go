@@ -21,28 +21,38 @@ func (h *GRPCHandler) CreateRole(ctx context.Context, req *api.Role) (*api.Succe
 	defer cancel()
 
 	if err := h.s.CreateRole(ctx, role); err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
 }
 
-func (h *GRPCHandler) Role(ctx context.Context, req *api.UserID) (*api.Role, error) {
+func (h *GRPCHandler) Role(ctx context.Context, req *api.UserID) (*api.Roles, error) {
 	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
 	defer cancel()
 
-	role, err := h.s.Role(ctx, req.User_ID)
+	roles, err := h.s.Roles(ctx, req.User_ID)
 	if err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
-	return &api.Role{
-		ID:          role.ID,
-		Name:        role.Name,
-		Description: role.Description,
-		IsDefault:   role.IsDefault,
-		CreatedAt:   timestamppb.New(role.CreatedAt),
-		UpdatedAt:   timestamppb.New(role.UpdateAt),
+	respRoles := make([]*api.Role, 0, len(roles))
+
+	for _, role := range roles {
+		respRole := &api.Role{
+			ID:          role.ID,
+			Name:        role.Name,
+			Description: role.Description,
+			IsDefault:   role.IsDefault,
+			CreatedAt:   timestamppb.New(role.CreatedAt),
+			UpdatedAt:   timestamppb.New(role.UpdatedAt),
+		}
+
+		respRoles = append(respRoles, respRole)
+	}
+
+	return &api.Roles{
+		Roles: respRoles,
 	}, nil
 }
 
@@ -65,7 +75,7 @@ func (h *GRPCHandler) CreatePermission(ctx context.Context, req *api.PermissionR
 		permissionReq.RoleName,
 	)
 	if err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
@@ -84,7 +94,7 @@ func (h *GRPCHandler) BindUserRole(ctx context.Context, req *api.UserID) (*api.S
 	defer cancel()
 
 	if err := h.s.BindUserRole(ctx, req.User_ID); err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
@@ -95,7 +105,7 @@ func (h *GRPCHandler) AddUserRole(ctx context.Context, req *api.UserIDRoleName) 
 	defer cancel()
 
 	if err := h.s.AddUserRole(ctx, req.User_ID, req.RoleName); err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
@@ -112,7 +122,7 @@ func (h *GRPCHandler) ReplaceUserRole(ctx context.Context, req *api.UpdateUserRo
 	defer cancel()
 
 	if err := h.s.ReplaceUserRole(ctx, updUsRl); err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
@@ -123,7 +133,7 @@ func (h *GRPCHandler) DeleteUserRole(ctx context.Context, req *api.UserIDRoleNam
 	defer cancel()
 
 	if err := h.s.DeleteUserRole(ctx, req.User_ID, req.RoleName); err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	return success(), nil
@@ -139,7 +149,7 @@ func (h *GRPCHandler) permissions(
 
 	permissions, err := fn(ctx, field)
 	if err != nil {
-		return nil, grpcx.HandleError(err)
+		return nil, grpcx.HandleError(h.l, err)
 	}
 
 	res := &api.Permissions{
@@ -154,7 +164,7 @@ func (h *GRPCHandler) permissions(
 				Name:        perm.Name,
 				Description: perm.Description,
 				CreatedAt:   timestamppb.New(perm.CreatedAt),
-				UpdatedAt:   timestamppb.New(perm.UpdateAt),
+				UpdatedAt:   timestamppb.New(perm.UpdatedAt),
 			},
 		)
 	}

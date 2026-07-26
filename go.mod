@@ -3,8 +3,8 @@ module github.com/GroVlAn/auth-access
 go 1.25.1
 
 require (
-	github.com/GroVlAn/auth-api v0.0.0-20260724101055-c66c92dfb635
-	github.com/GroVlAn/auth-base v0.0.0-20260614174515-d76ca1fed316
+	github.com/GroVlAn/auth-api v0.0.0-20260725124213-47b20ddaa034
+	github.com/GroVlAn/auth-base v0.0.0-20260725103856-0f107994aba2
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0

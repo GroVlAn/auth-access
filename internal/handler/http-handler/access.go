@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/GroVlAn/auth-access/internal/domain"
@@ -13,10 +14,10 @@ import (
 
 const (
 	roleEndpoint            = "/"
+	permissionEndpoint      = "/permission"
 	addUserRoleEndpoint     = "/user/role"
 	replaceUserRoleEndpoint = "/user/replace"
 	deleteUserRoleEndpoint  = "/user/delete"
-	permissionEndpoint      = "/permission"
 
 	userIDKey   = "user-id"
 	roleNameKey = "role-name"
@@ -24,12 +25,12 @@ const (
 
 func (h *HTTPHandler) accessRoute(r chi.Router) {
 	r.Post(roleEndpoint, h.createRole)
-	r.Get(roleEndpoint, h.role)
+	r.Get(roleEndpoint, h.roles)
 	r.Post(permissionEndpoint, h.createPermission)
 	r.Get(permissionEndpoint, h.permissions)
 	r.Patch(addUserRoleEndpoint, h.addUserRole)
 	r.Patch(replaceUserRoleEndpoint, h.replaceUserRole)
-	r.Patch(deleteUserRoleEndpoint, h.deleteUserRole)
+	r.Delete(deleteUserRoleEndpoint, h.deleteUserRole)
 }
 
 func (h *HTTPHandler) createRole(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +54,7 @@ func (h *HTTPHandler) createRole(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *HTTPHandler) role(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) roles(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	userID := query.Get(userIDKey)
@@ -61,13 +62,15 @@ func (h *HTTPHandler) role(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), h.DefaultTimeout)
 	defer cancel()
 
-	role, err := h.s.Role(ctx, userID)
+	log.Printf("userID: %s, type: %T", userID, userID)
+
+	roles, err := h.s.Roles(ctx, userID)
 	if err != nil {
 		h.handleError(w, err)
 		return
 	}
 
-	h.sendResponseWithData(w, role, http.StatusOK)
+	h.sendResponseWithData(w, roles, http.StatusOK)
 }
 
 func (h *HTTPHandler) createPermission(w http.ResponseWriter, r *http.Request) {
@@ -98,13 +101,13 @@ func (h *HTTPHandler) permissions(w http.ResponseWriter, r *http.Request) {
 	userID := query.Get(userIDKey)
 	roleName := query.Get(roleNameKey)
 
-	if len(userID) == 0 || len(roleName) == 0 {
+	if len(userID) == 0 && len(roleName) == 0 {
 		h.handleError(
 			w,
 			ew.NewErrValidation("query must have role name or user id"),
 		)
 		return
-	} else if len(userID) > 0 || len(roleName) > 0 {
+	} else if len(userID) > 0 && len(roleName) > 0 {
 		h.handleError(
 			w,
 			ew.NewErrValidation("query must have only role name or user id"),

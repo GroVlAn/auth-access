@@ -10,8 +10,8 @@ import (
 )
 
 type repo interface {
-	CreateRole(ctx context.Context, role domain.Role) error
-	Role(ctx context.Context, userID string) (domain.Role, error)
+	CreateRole(ctx context.Context, role domain.Role) (string, error)
+	Roles(ctx context.Context, userID string) ([]domain.Role, error)
 	RoleIDByName(ctx context.Context, name string) (string, error)
 	DefaultRole(ctx context.Context) (domain.Role, error)
 	CreatePermission(
@@ -52,22 +52,22 @@ func (s *Service) CreateRole(ctx context.Context, role domain.Role) error {
 
 	role.ID = uuid.NewString()
 	role.CreatedAt = time.Now()
-	role.UpdateAt = time.Now()
+	role.UpdatedAt = time.Now()
 
-	if err := s.repo.CreateRole(ctx, role); err != nil {
+	if _, err := s.repo.CreateRole(ctx, role); err != nil {
 		return fmt.Errorf("creating new role: %w", err)
 	}
 
 	return nil
 }
 
-func (s *Service) Role(ctx context.Context, userID string) (domain.Role, error) {
-	role, err := s.repo.Role(ctx, userID)
+func (s *Service) Roles(ctx context.Context, userID string) ([]domain.Role, error) {
+	roles, err := s.repo.Roles(ctx, userID)
 	if err != nil {
-		return domain.Role{}, fmt.Errorf("getting role by user id: %w", err)
+		return nil, fmt.Errorf("getting role by user id: %w", err)
 	}
 
-	return role, nil
+	return roles, nil
 }
 
 func (s *Service) CreatePermission(ctx context.Context, permission domain.Permission, roleName string) error {
@@ -75,6 +75,8 @@ func (s *Service) CreatePermission(ctx context.Context, permission domain.Permis
 	if err != nil {
 		return fmt.Errorf("getting role id by role name: %w", err)
 	}
+
+	permission.ID = uuid.NewString()
 
 	if err := s.repo.CreatePermission(ctx, roleID, permission); err != nil {
 		return fmt.Errorf("creating permission: %w", err)

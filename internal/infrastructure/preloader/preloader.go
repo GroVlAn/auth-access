@@ -12,7 +12,7 @@ import (
 )
 
 type repo interface {
-	CreateRole(ctx context.Context, role domain.Role) error
+	CreateRole(ctx context.Context, role domain.Role) (string, error)
 	CreatePermission(
 		ctx context.Context,
 		roleID string,
@@ -73,14 +73,15 @@ func (p *Preloader) createRole(ctx context.Context, el domain.RoleElement) (stri
 		Description: el.Description,
 		IsDefault:   el.IsDefault,
 		CreatedAt:   time.Now(),
-		UpdateAt:    time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
-	if err := p.repo.CreateRole(ctx, role); err != nil {
+	roleID, err := p.repo.CreateRole(ctx, role)
+	if err != nil {
 		return "", fmt.Errorf("creating default role: %w", err)
 	}
 
-	return role.ID, nil
+	return roleID, nil
 }
 
 func (p *Preloader) createPermission(
@@ -94,7 +95,7 @@ func (p *Preloader) createPermission(
 			Name:        el.Name,
 			Description: el.Description,
 			CreatedAt:   time.Now(),
-			UpdateAt:    time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 
 		if err := p.repo.CreatePermission(ctx, roleID, permission); err != nil {

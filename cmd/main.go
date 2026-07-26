@@ -72,6 +72,7 @@ func main() {
 	r := repository.New(db)
 
 	if len(*defRolesConfigPath) > 0 {
+		l.Info().Msg("starting load default roles")
 		pr := preloader.New(r, preloader.Deps{
 			DefRolesConfigPath: *defRolesConfigPath,
 		})
@@ -161,7 +162,7 @@ func loadDefaultRoles(ctx context.Context, l zerolog.Logger, cfg *config.Config,
 	err := preloader.Preload(ctxR)
 
 	if err != nil {
-		respErr := httpx.HandleError(err)
+		respErr := httpx.HandleError(l, err)
 		l.Fatal().Err(err).Msg(respErr.LogMsg)
 	}
 }

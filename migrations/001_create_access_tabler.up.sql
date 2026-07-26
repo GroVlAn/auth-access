@@ -30,7 +30,7 @@ CREATE TABLE user_roles
     role_id UUID REFERENCES role(id) ON DELETE CASCADE NOT NULL,
     user_id UUID NOT NULL,
     PRIMARY KEY(role_id, user_id)
-)
+);
 
 CREATE INDEX idx_role_permissions_role
 ON role_permissions(role_id);
@@ -43,6 +43,3 @@ ON user_roles(role_id);
 
 CREATE INDEX idx_user_roles_user
 ON user_roles(user_id);
-
-ALTER TABLE roles
-ADD CONSTRAINT roles_name_key UNIQUE(name);

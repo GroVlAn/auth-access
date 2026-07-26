@@ -25,7 +25,7 @@ type Role struct {
 	Description string    `json:"description" db:"description"`
 	IsDefault   bool      `json:"is_default" db:"is_default"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdateAt    time.Time `json:"update_at" db:"update_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type Permission struct {
@@ -33,7 +33,7 @@ type Permission struct {
 	Name        string    `json:"name" db:"name" valid:"require"`
 	Description string    `json:"description" db:"description"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdateAt    time.Time `json:"update_at" db:"update_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 func (r Role) Validate() error {

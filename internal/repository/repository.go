@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/GroVlAn/auth-access/internal/domain"
 	"github.com/GroVlAn/auth-base/ew"
@@ -15,8 +16,8 @@ import (
 const (
 	roleTable           = "role"
 	permissionTable     = "permission"
-	rolePermissionTable = "role_permission"
-	roleUserTable       = "role_user"
+	rolePermissionTable = "role_permissions"
+	roleUserTable       = "user_roles"
 
 	uniqueViolation = "23505"
 )
@@ -31,27 +32,48 @@ func New(db *sqlx.DB) *Repository {
 	}
 }
 
-func (r *Repository) CreateRole(ctx context.Context, role domain.Role) error {
-	query := fmt.Sprintf(
-		`INSERT INTO %s 
-				(id, name, description,	is_default, create_at) 
-				VALUES (:id, :name, :description, :is_default, :created_at)`,
+func (r *Repository) CreateRole(ctx context.Context, role domain.Role) (string, error) {
+	query := fmt.Sprintf(`
+		INSERT INTO %s 
+			(id, name, description,	is_default, created_at, updated_at) 
+			VALUES (:id, :name, :description, :is_default, :created_at, :updated_at)
+			ON CONFLICT(name)
+			DO UPDATE SET
+				description = EXCLUDED.description,
+    			updated_at = NOW()
+			RETURNING id
+		`,
 		roleTable,
 	)
 
-	res, err := r.db.NamedExecContext(ctx, query, role)
+	rows, err := r.db.NamedQueryContext(ctx, query, role)
 	if err != nil {
-		return r.handleErrCreate(err, "roles_name_key", "role")
+		return "", r.handleErrCreate(err, "roles_name_key", "role")
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return "", ew.New(
+			ew.ErrorTypeInternal,
+			errors.New("role id was not returned"),
+		)
 	}
 
-	if err := checkRowsAffected(res, "role", role.ID); err != nil {
-		return fmt.Errorf("checking affected: %w", err)
+	var id string
+
+	if err := rows.Scan(&id); err != nil {
+		return "", ew.New(
+			ew.ErrorTypeInternal,
+			fmt.Errorf("scanning role id: %w", err),
+		)
 	}
 
-	return nil
+	return id, nil
 }
 
-func (r *Repository) Role(ctx context.Context, userID string) (domain.Role, error) {
+func (r *Repository) Roles(ctx context.Context, userID string) ([]domain.Role, error) {
+
+	log.Printf("repository userID=%q", userID)
 	query := fmt.Sprintf(
 		`SELECT 
 				r.id, 
@@ -68,12 +90,7 @@ func (r *Repository) Role(ctx context.Context, userID string) (domain.Role, erro
 		roleUserTable,
 	)
 
-	var role domain.Role
-	if err := r.db.GetContext(ctx, &role, query, userID); err != nil {
-		return role, handleQueryError(err, "role not found")
-	}
-
-	return role, nil
+	return r.selectRoles(ctx, query, userID)
 }
 
 func (r *Repository) RoleIDByName(ctx context.Context, name string) (string, error) {
@@ -84,7 +101,7 @@ func (r *Repository) RoleIDByName(ctx context.Context, name string) (string, err
 	var id string
 
 	if err := r.db.GetContext(ctx, &id, query, name); err != nil {
-		return "", handleQueryError(err, "role id not found")
+		return "", handleQueryError(err, "role not found")
 	}
 
 	return id, nil
@@ -94,7 +111,7 @@ func (r *Repository) DefaultRole(ctx context.Context) (domain.Role, error) {
 	query := fmt.Sprintf(`
 		SELECT id, name, description, is_default, created_at, updated_at
 		FROM %s
-		WHERE is_default = 1
+		WHERE is_default = TRUE
 	`,
 		roleTable,
 	)
@@ -122,14 +139,14 @@ func (r *Repository) CreatePermission(
 		query := fmt.Sprintf(`
 			INSERT INTO %s (
 				role_id,
-				permission_id,
+				permission_id
 			)
 			VALUES ($1, $2)
 			ON CONFLICT (role_id, permission_id)
 			DO NOTHING
 		`, rolePermissionTable)
 
-		res, err := tx.ExecContext(
+		_, err = tx.ExecContext(
 			ctx,
 			query,
 			roleID,
@@ -140,10 +157,6 @@ func (r *Repository) CreatePermission(
 				ew.ErrorTypeInternal,
 				fmt.Errorf("inserting role permission: %w", err),
 			)
-		}
-
-		if err := checkRowsAffected(res, "permission", permissionID); err != nil {
-			return fmt.Errorf("checking affected: %w", err)
 		}
 
 		return nil
@@ -329,30 +342,26 @@ func (r *Repository) upsertPermission(
 			id,
 			name,
 			description,
-			create_at,
-			update_at
+			created_at,
+			updated_at
 		)
 		VALUES (
 			:id,
 			:name,
 			:description,
-			:create_at,
-			:update_at
+			:created_at,
+			:updated_at
 		)
 		ON CONFLICT (name)
-		DO UPDATE
-			SET name = EXCLUDED.name
+		DO UPDATE SET
+			description = EXCLUDED.description,
+    		updated_at = NOW()
 		RETURNING id
 	`, permissionTable)
 
-	rows, err := tx.QueryContext(
-		ctx,
+	rows, err := tx.NamedQuery(
 		query,
-		permission.ID,
-		permission.Name,
-		permission.Description,
-		permission.CreatedAt,
-		permission.UpdateAt,
+		permission,
 	)
 	if err != nil {
 		return "", r.handleErrCreate(err, "permission_name_key", "permission")
@@ -378,14 +387,41 @@ func (r *Repository) upsertPermission(
 	return id, nil
 }
 
+func (r *Repository) selectRoles(ctx context.Context, query string, args ...any) ([]domain.Role, error) {
+	var roles []domain.Role
+
+	if err := r.db.SelectContext(ctx, &roles, query, args...); err != nil {
+		return nil, ew.New(
+			ew.ErrorTypeInternal,
+			fmt.Errorf("selecting roles: %w", err),
+		)
+	}
+
+	if len(roles) == 0 {
+		return nil, ew.New(
+			ew.ErrorTypeNotFound,
+			fmt.Errorf("roles not found"),
+		).Msg("user roles not found")
+	}
+
+	return roles, nil
+}
+
 func (r *Repository) selectPermissions(ctx context.Context, query string, args ...any) ([]domain.Permission, error) {
 	var permissions []domain.Permission
-	err := r.db.SelectContext(ctx, &permissions, query, args)
-	if err != nil {
+
+	if err := r.db.SelectContext(ctx, &permissions, query, args...); err != nil {
 		return nil, ew.New(
 			ew.ErrorTypeInternal,
 			fmt.Errorf("selecting permissions: %w", err),
 		)
+	}
+
+	if len(permissions) == 0 {
+		return nil, ew.New(
+			ew.ErrorTypeNotFound,
+			fmt.Errorf("permissions not found"),
+		).Msg("user permissions not found")
 	}
 
 	return permissions, nil

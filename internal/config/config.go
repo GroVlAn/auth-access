@@ -9,7 +9,7 @@ import (
 )
 
 type HTTP struct {
-	Port              string        `yaml:"port" env-default:"9080"`
+	Port              string        `yaml:"port"`
 	MaxHeaderBytes    int           `yaml:"max_header_bytes" env-default:"4096"`
 	ReadHeaderTimeout time.Duration `yaml:"read_header_timeout" env-default:"10s"`
 	WriteTimeout      time.Duration `yaml:"write_timeout" env-default:"10s"`
@@ -18,12 +18,6 @@ type HTTP struct {
 
 type GRPC struct {
 	Port string `yaml:"port"`
-}
-
-type Kafka struct {
-	Brokers []string `yaml:"brokers"`
-	Topic   string   `yaml:"topic"`
-	GroupID string   `yaml:"group_id"`
 }
 
 type PostgresSettings struct {
@@ -42,7 +36,6 @@ type Settings struct {
 type Config struct {
 	HTTP     HTTP             `yaml:"http"`
 	GRPC     GRPC             `yaml:"grpc"`
-	Kafka    Kafka            `yaml:"kafka"`
 	Settings Settings         `yaml:"settings"`
 	DB       PostgresSettings `yaml:"db"`
 }
