@@ -14,6 +14,8 @@ import (
 	httpHandler "github.com/GroVlAn/auth-access/internal/handler/http-handler"
 	"github.com/GroVlAn/auth-access/internal/infrastructure/database"
 	"github.com/GroVlAn/auth-access/internal/infrastructure/preloader"
+	"github.com/GroVlAn/auth-access/internal/infrastructure/secrets"
+	vaultClient "github.com/GroVlAn/auth-access/internal/infrastructure/vault-client"
 	"github.com/GroVlAn/auth-access/internal/repository"
 	grpcServer "github.com/GroVlAn/auth-access/internal/server/grpc-server"
 	httpServer "github.com/GroVlAn/auth-access/internal/server/http-server"
@@ -52,12 +54,30 @@ func main() {
 		l.Fatal().Err(err).Msg("failed to load configuration")
 	}
 
+	vc, err := vaultClient.New(vaultClient.Conf{
+		SecretToken: cfg.Vault.SecretToken,
+		Address:     cfg.Vault.Address,
+		Mount:       cfg.Vault.Mount,
+	})
+	if err != nil {
+		l.Fatal().Err(err).Msg("failed to load vault client")
+	}
+
+	provider := secrets.New(vc, secrets.Paths{
+		Postgres: cfg.VaultPaths.Postgres,
+	})
+
+	scrt, err := provider.Load(ctx)
+	if err != nil {
+		l.Fatal().Err(err).Msg("failed load secrets")
+	}
+
 	db, err := database.NewPostgresqlDB(database.PostgresSettings{
 		Host:     cfg.DB.Host,
 		Port:     cfg.DB.Port,
-		Username: cfg.DB.Username,
-		Password: cfg.DB.Password,
-		DBName:   cfg.DB.DBName,
+		Username: scrt.Postgres.Username,
+		Password: scrt.Postgres.Password,
+		DBName:   scrt.Postgres.DBName,
 		SSLMode:  cfg.DB.SSLMode,
 	})
 	if err != nil {

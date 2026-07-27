@@ -21,23 +21,33 @@ type GRPC struct {
 }
 
 type PostgresSettings struct {
-	Host     string `yaml:"host" env-required:"true"`
-	Port     string `yaml:"port"`
-	Username string `env:"DB_USERNAME" env-required:"true"`
-	Password string `env:"DB_PASSWORD" env-required:"true"`
-	DBName   string `env:"DB_NAME" env-required:"true"`
-	SSLMode  string `yaml:"ssl_mode"`
+	Host    string `yaml:"host" env-required:"true"`
+	Port    string `yaml:"port"`
+	SSLMode string `yaml:"ssl_mode"`
 }
 
 type Settings struct {
 	DefaultTimeout time.Duration `yaml:"default_timeout"`
 }
 
+type Vault struct {
+	SecretToken string `env:"VAULT_SECRET_TOKEN" env-required:"true"`
+	Address     string `env:"VAULT_ADDRESS" env-required:"true"`
+	Mount       string `env:"VAULT_MOUNT" env-required:"true"`
+}
+
+type VaultPaths struct {
+	Postgres string `env:"POSTGRES_PATH" env-required:"true"`
+	Hasher   string `env:"HASHER_PATH" env-required:"true"`
+}
+
 type Config struct {
-	HTTP     HTTP             `yaml:"http"`
-	GRPC     GRPC             `yaml:"grpc"`
-	Settings Settings         `yaml:"settings"`
-	DB       PostgresSettings `yaml:"db"`
+	HTTP       HTTP             `yaml:"http"`
+	GRPC       GRPC             `yaml:"grpc"`
+	Settings   Settings         `yaml:"settings"`
+	DB         PostgresSettings `yaml:"db"`
+	Vault      Vault
+	VaultPaths VaultPaths
 }
 
 func New(path string) (*Config, error) {

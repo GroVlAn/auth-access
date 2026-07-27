@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/GroVlAn/auth-access/internal/domain"
@@ -61,8 +60,6 @@ func (h *HTTPHandler) roles(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), h.DefaultTimeout)
 	defer cancel()
-
-	log.Printf("userID: %s, type: %T", userID, userID)
 
 	roles, err := h.s.Roles(ctx, userID)
 	if err != nil {

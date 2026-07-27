@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/GroVlAn/auth-access/internal/domain"
 	"github.com/GroVlAn/auth-base/ew"
@@ -72,8 +71,6 @@ func (r *Repository) CreateRole(ctx context.Context, role domain.Role) (string, 
 }
 
 func (r *Repository) Roles(ctx context.Context, userID string) ([]domain.Role, error) {
-
-	log.Printf("repository userID=%q", userID)
 	query := fmt.Sprintf(
 		`SELECT 
 				r.id, 
