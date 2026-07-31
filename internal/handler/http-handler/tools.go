@@ -5,35 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"strings"
 
 	"github.com/GroVlAn/auth-access/internal/domain"
 	"github.com/GroVlAn/auth-base/ew"
 	"github.com/GroVlAn/auth-base/ew/httpx"
 )
-
-func (h *HTTPHandler) extractBearerToken(r *http.Request) (string, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return "", ew.New(
-			ew.ErrorTypeUnauthorized,
-			errors.New("authorization header is missing"),
-		).Msg("authorization header is missing")
-	}
-
-	// Разделяем заголовок по пробелу
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return "", ew.New(
-			ew.ErrorTypeUnauthorized,
-			errors.New("invalid authorization format"),
-		).Msg("invalid authorization format")
-	}
-
-	return parts[1], nil
-}
 
 func (h *HTTPHandler) sendResponse(w http.ResponseWriter, res domain.Response, status int) {
 	b, err := json.Marshal(res)
@@ -123,39 +100,4 @@ func (h *HTTPHandler) withBodyClose(body io.ReadCloser, fn func(io.ReadCloser)) 
 	}(body)
 
 	fn(body)
-}
-
-func (h *HTTPHandler) sendInternalError(w http.ResponseWriter, logMessage string) {
-	h.l.Error().Msg(logMessage)
-
-	w.WriteHeader(http.StatusInternalServerError)
-
-	res := domain.Response{
-		Error: &domain.ErrorResponse{
-			Code: http.StatusInternalServerError,
-			Text: "internal server error",
-		},
-	}
-
-	h.sendResponse(w, res, http.StatusInternalServerError)
-}
-
-func (h *HTTPHandler) userIP(r *http.Request) string {
-	for _, header := range []string{"X-Forwarder-For", "X-Real-IP"} {
-		addresses := r.Header.Get(header)
-		if addresses != "" {
-			addressList := strings.Split(addresses, ",")
-			ip := strings.TrimSpace(addressList[0])
-			if ip != "" {
-				return ip
-			}
-		}
-	}
-
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-
-	return ip
 }
