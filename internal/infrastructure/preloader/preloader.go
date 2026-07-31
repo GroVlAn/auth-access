@@ -106,8 +106,8 @@ func (p *Preloader) createPermission(
 	return nil
 }
 
-func load(path string) ([]domain.RoleElement, error) {
-	file, err := os.ReadFile(path)
+func load(filePath string) ([]domain.RoleElement, error) {
+	file, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}

@@ -15,3 +15,22 @@ db:
   host: 'access_db'
   port: 5435
   ssl_mode: disable
+
+middleware:
+  allowed_origins:
+    - 'https://*'
+    - 'http://*'
+  allowed_methods:
+    - 'GET'
+    - 'POST'
+    - 'PATCH'
+    - 'PUT'
+    - 'DELETE'
+    - 'OPTIONS'
+  allowed_headers:
+    - 'Accept'
+    - 'Authorization'
+    - 'Content-Type'
+    - 'X-CSRF-Token'
+  allow_credentials: true
+  max_age: 300
