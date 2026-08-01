@@ -9,7 +9,6 @@ import (
 	"github.com/GroVlAn/auth-access/internal/domain"
 	"github.com/GroVlAn/auth-base/ew"
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 )
 
 const (
@@ -47,7 +46,10 @@ func (r *Repository) CreateRole(ctx context.Context, role domain.Role) (string, 
 
 	rows, err := r.db.NamedQueryContext(ctx, query, role)
 	if err != nil {
-		return "", r.handleErrCreate(err, "roles_name_key", "role")
+		return "", handleDBError(
+			fmt.Errorf("inserting new role: %w", err),
+			DBErrorMessages{},
+		)
 	}
 	defer rows.Close()
 
@@ -128,7 +130,7 @@ func (r *Repository) CreatePermission(
 	permission domain.Permission,
 ) error {
 	return withTx(ctx, r.db, func(tx *sqlx.Tx) error {
-		permissionID, err := r.upsertPermission(ctx, tx, permission)
+		permissionID, err := r.upsertPermission(tx, permission)
 		if err != nil {
 			return err
 		}
@@ -150,9 +152,11 @@ func (r *Repository) CreatePermission(
 			permissionID,
 		)
 		if err != nil {
-			return ew.New(
-				ew.ErrorTypeInternal,
-				fmt.Errorf("inserting role permission: %w", err),
+			return handleDBError(
+				fmt.Errorf("inserting new permission: %w", err),
+				DBErrorMessages{
+					NotFound: "role or permission not found",
+				},
 			)
 		}
 
@@ -184,7 +188,6 @@ func (r *Repository) PermissionsByUser(ctx context.Context, userID string) ([]do
 	if err != nil {
 		return nil, err
 	}
-
 	if len(permissions) == 0 {
 		return nil, r.permissionNotFound("permissions for user id", userID)
 	}
@@ -216,7 +219,6 @@ func (r *Repository) PermissionsByRole(ctx context.Context, roleName string) ([]
 	if err != nil {
 		return nil, err
 	}
-
 	if len(permissions) == 0 {
 		return nil, r.permissionNotFound("permissions for role id", roleName)
 	}
@@ -230,11 +232,13 @@ func (r *Repository) SetUserRole(ctx context.Context, roleID, userID string) err
 	`, roleUserTable)
 
 	res, err := r.db.ExecContext(ctx, query, roleID, userID)
-
 	if err != nil {
-		return ew.New(
-			ew.ErrorTypeInternal,
-			fmt.Errorf("inserting user role: %w", err),
+		return handleDBError(
+			fmt.Errorf("setting user role: %w", err),
+			DBErrorMessages{
+				Conflict: "user already exits this role",
+				NotFound: "role not found",
+			},
 		)
 	}
 
@@ -267,9 +271,11 @@ func (r *Repository) ReplaceUserRole(
 			oldRoleID,
 		)
 		if err != nil {
-			return ew.New(
-				ew.ErrorTypeInternal,
+			return handleDBError(
 				fmt.Errorf("replacing user role: %w", err),
+				DBErrorMessages{
+					NotFound: "role not found",
+				},
 			)
 		}
 
@@ -299,9 +305,11 @@ func (r *Repository) DeleteUserRole(
 		roleID,
 	)
 	if err != nil {
-		return ew.New(
-			ew.ErrorTypeInternal,
+		return handleDBError(
 			fmt.Errorf("deleting user role: %w", err),
+			DBErrorMessages{
+				NotFound: "role not found",
+			},
 		)
 	}
 
@@ -312,25 +320,7 @@ func (r *Repository) DeleteUserRole(
 	return nil
 }
 
-func (r *Repository) handleErrCreate(err error, constraint, entity string) error {
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) {
-		if pqErr.Code == uniqueViolation && pqErr.Constraint == constraint {
-			return ew.New(
-				ew.ErrorTypeConflict,
-				fmt.Errorf("inserting new %s: %w", entity, err),
-			).Msg("role already exist")
-		}
-	}
-
-	return ew.New(
-		ew.ErrorTypeInternal,
-		fmt.Errorf("inserting new %s: %w", entity, err),
-	)
-}
-
 func (r *Repository) upsertPermission(
-	ctx context.Context,
 	tx *sqlx.Tx,
 	permission domain.Permission,
 ) (string, error) {
@@ -361,7 +351,13 @@ func (r *Repository) upsertPermission(
 		permission,
 	)
 	if err != nil {
-		return "", r.handleErrCreate(err, "permission_name_key", "permission")
+		return "", handleDBError(
+			fmt.Errorf("upserting permission: %w", err),
+			DBErrorMessages{
+				Conflict: "permission already exist",
+				NotFound: "role not found",
+			},
+		)
 	}
 	defer rows.Close()
 
