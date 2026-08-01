@@ -16,8 +16,6 @@ const (
 	permissionTable     = "permission"
 	rolePermissionTable = "role_permissions"
 	roleUserTable       = "user_roles"
-
-	uniqueViolation = "23505"
 )
 
 type Repository struct {
