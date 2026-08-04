@@ -19,6 +19,7 @@ type repo interface {
 		roleID string,
 		permission domain.Permission,
 	) error
+	FullPermissions(ctx context.Context, userID string) ([]string, error)
 	PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error)
 	PermissionsByRole(ctx context.Context, roleName string) ([]domain.Permission, error)
 	SetUserRole(ctx context.Context, roleID, userID string) error
@@ -83,6 +84,15 @@ func (s *Service) CreatePermission(ctx context.Context, permission domain.Permis
 	}
 
 	return nil
+}
+
+func (s *Service) FullPermissions(ctx context.Context, userID string) ([]string, error) {
+	permissions, err := s.repo.FullPermissions(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("getting full user permissions: %w", err)
+	}
+
+	return permissions, nil
 }
 
 func (s *Service) PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error) {

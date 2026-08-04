@@ -81,11 +81,31 @@ func (h *GRPCHandler) CreatePermission(ctx context.Context, req *api.PermissionR
 	return success(), nil
 }
 
-func (h *GRPCHandler) GetPermissionByUserID(ctx context.Context, req *api.UserID) (*api.Permissions, error) {
+func (h *GRPCHandler) GetFullPermissions(ctx context.Context, req *api.UserID) (*api.FullPermissions, error) {
+	ctx, cancel := context.WithTimeout(ctx, h.defaultTimeout)
+	defer cancel()
+
+	permissions, err := h.s.FullPermissions(ctx, req.User_ID)
+	if err != nil {
+		return nil, grpcx.HandleError(h.l, err)
+	}
+
+	resp := &api.FullPermissions{
+		Permissions: make([]string, 0, len(permissions)),
+	}
+
+	for _, p := range permissions {
+		resp.Permissions = append(resp.Permissions, p)
+	}
+
+	return resp, nil
+}
+
+func (h *GRPCHandler) GetPermissionsByUserID(ctx context.Context, req *api.UserID) (*api.Permissions, error) {
 	return h.permissions(ctx, req.User_ID, h.s.PermissionsByUser)
 }
 
-func (h *GRPCHandler) GetPermissionByRoleName(ctx context.Context, req *api.RoleName) (*api.Permissions, error) {
+func (h *GRPCHandler) GetPermissionsByRoleName(ctx context.Context, req *api.RoleName) (*api.Permissions, error) {
 	return h.permissions(ctx, req.RoleName, h.s.PermissionsByRole)
 }
 

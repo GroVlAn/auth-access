@@ -13,6 +13,7 @@ type service interface {
 	CreateRole(ctx context.Context, role domain.Role) error
 	Roles(ctx context.Context, userID string) ([]domain.Role, error)
 	CreatePermission(ctx context.Context, permission domain.Permission, roleName string) error
+	FullPermissions(ctx context.Context, userID string) ([]string, error)
 	PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error)
 	PermissionsByRole(ctx context.Context, roleName string) ([]domain.Permission, error)
 	AddUserRole(ctx context.Context, userID, roleName string) error

@@ -162,6 +162,43 @@ func (r *Repository) CreatePermission(
 	})
 }
 
+func (r *Repository) FullPermissions(ctx context.Context, userID string) ([]string, error) {
+	query := fmt.Sprintf(`
+		SELECT DISTINCT
+		r.name || '.' || p.name
+		FROM %s ur 
+		JOIN %s r
+			ON ur.role_id = r.id
+		JOIN %s rp
+			ON r.id = rp.role_id
+		JOIN %s p
+			ON rp.permission_id = p.id
+		WHERE ur.user_id = $1
+		`,
+		roleUserTable,
+		roleTable,
+		rolePermissionTable,
+		permissionTable,
+	)
+
+	var permissions []string
+	if err := r.db.SelectContext(ctx, &permissions, query, userID); err != nil {
+		return nil, ew.New(
+			ew.ErrorTypeInternal,
+			fmt.Errorf("selecting permissions: %w", err),
+		)
+	}
+
+	if len(permissions) == 0 {
+		return nil, ew.New(
+			ew.ErrorTypeNotFound,
+			fmt.Errorf("permissions not found"),
+		).Msg("user permissions not found")
+	}
+
+	return permissions, nil
+}
+
 func (r *Repository) PermissionsByUser(ctx context.Context, userID string) ([]domain.Permission, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT
