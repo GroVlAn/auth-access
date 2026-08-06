@@ -9,8 +9,15 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.35.1
+	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 )
 
 require (

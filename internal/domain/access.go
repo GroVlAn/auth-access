@@ -51,7 +51,7 @@ func (r Role) Validate() error {
 }
 
 func (p Permission) Validate() error {
-	err := ew.NewErrValidation("validation role")
+	err := ew.NewErrValidation("validation permission")
 
 	if len(p.Name) == 0 {
 		err.AddField("name", "name is required")

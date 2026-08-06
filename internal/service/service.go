@@ -72,6 +72,10 @@ func (s *Service) Roles(ctx context.Context, userID string) ([]domain.Role, erro
 }
 
 func (s *Service) CreatePermission(ctx context.Context, permission domain.Permission, roleName string) error {
+	if err := permission.Validate(); err != nil {
+		return err
+	}
+
 	roleID, err := s.repo.RoleIDByName(ctx, roleName)
 	if err != nil {
 		return fmt.Errorf("getting role id by role name: %w", err)
@@ -107,7 +111,7 @@ func (s *Service) PermissionsByUser(ctx context.Context, userID string) ([]domai
 func (s *Service) PermissionsByRole(ctx context.Context, roleName string) ([]domain.Permission, error) {
 	permissions, err := s.repo.PermissionsByRole(ctx, roleName)
 	if err != nil {
-		return nil, fmt.Errorf("getting permissions by user: %w", err)
+		return nil, fmt.Errorf("getting permissions by role name: %w", err)
 	}
 
 	return permissions, nil
