@@ -31,7 +31,7 @@ The service uses Role-Based Access Control (RBAC).
 
 The basic relationship is
 
-![Architecture](architecture/relationship.png)
+![Relationship](architecture/relationship.png)
 
 A user does not need to be assigned individual permissions directly.
 
