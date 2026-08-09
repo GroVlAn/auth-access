@@ -25,3 +25,6 @@ packages:
   github.com/GroVlAn/auth-access/internal/service:
     config:
       all: true
+  github.com/GroVlAn/auth-access/internal/infrastructure/preloader:
+    config:
+      all: true

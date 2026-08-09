@@ -7,7 +7,6 @@ require (
 	github.com/GroVlAn/auth-base v0.0.0-20260801082730-39e33b8e9214
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
-	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.82.1
@@ -16,6 +15,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 )
