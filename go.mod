@@ -4,11 +4,11 @@ go 1.25.1
 
 require (
 	github.com/GroVlAn/auth-api v0.0.0-20260801123149-f0aed1b91f21
-	github.com/GroVlAn/auth-base v0.0.0-20260801082730-39e33b8e9214
+	github.com/GroVlAn/auth-base v0.0.0-20260810085448-d21f2ae08a03
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/rs/zerolog v1.35.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
 )

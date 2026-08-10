@@ -4,8 +4,8 @@ github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/GroVlAn/auth-api v0.0.0-20260801123149-f0aed1b91f21 h1:34Z4nEn4JfR/tuH1ACDCoUR8p030oASFMsa10Dk1xnA=
 github.com/GroVlAn/auth-api v0.0.0-20260801123149-f0aed1b91f21/go.mod h1:yo5d2rHjM3vAKMXPokMVxsDinlf55YsA3mNlGgg7/SE=
-github.com/GroVlAn/auth-base v0.0.0-20260801082730-39e33b8e9214 h1:IOXvO+bLAPlFE2JzG5eH4zgSN6K5XCcH2Yj0ioTUM/Y=
-github.com/GroVlAn/auth-base v0.0.0-20260801082730-39e33b8e9214/go.mod h1:72XR7IVG9PPff+lPPjNk32iIWdheHEb436nGraWd2MM=
+github.com/GroVlAn/auth-base v0.0.0-20260810085448-d21f2ae08a03 h1:6jAIVLKHgCJsjWUftwJuSEWR0Dm7vuChCMU4OJgwpOk=
+github.com/GroVlAn/auth-base v0.0.0-20260810085448-d21f2ae08a03/go.mod h1:3zOveTAvlT/AjI4izdBO8l0GINTQlWUaSRVGFMx6ci8=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -82,8 +82,8 @@ github.com/ryanuber/go-glob v1.0.0 h1:iQh3xXAumdQ+4Ufa5b25cRpC5TYKlno6hsv6Cb3pkB
 github.com/ryanuber/go-glob v1.0.0/go.mod h1:807d1WSdnB0XRJzKNil9Om6lcp/3a0v4qIHxIXzX/Yc=
 github.com/stretchr/objx v0.5.2 h1:xuMeJ0Sdp5ZMRXx/aWO6RZxdr3beISkG5/G/aIRr3pY=
 github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
-github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
-github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/otel v1.43.0 h1:mYIM03dnh5zfN7HautFE4ieIig9amkNANT+xcVxAj9I=
